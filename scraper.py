@@ -24,7 +24,7 @@ def extract_next_links(url, resp):
         soup = BeautifulSoup(content, "html.parser")
         
         for a_tag in soup.find_all("a", href=True):
-            full_url = urljoin(url, a_tag['href'])
+            full_url = urljoin(url, a_tag['href']) # Resolve relative URLs
             full_url = full_url.split('#')[0]  # Remove fragment
             links.add(full_url)
         
@@ -41,18 +41,17 @@ def is_valid(url):
         parsed = urlparse(url)
         if parsed.scheme not in set(["http", "https"]):
             return False
-        
-        link = parsed.netloc
-        if link == "":
-            link = parsed.path
 
-        if re.search(r"/events/|\?share=", link.lower()):
+        if re.search(r"/events/", parsed.path.lower()): # paths to exclude
+            return False
+        
+        if re.search(r"\?share=|\?ical=", parsed.query): # query parameters to exclude
             return False
 
-        isUCIEDU = re.search(r"ics.uci.edu|cs.uci.edu|informatics.uci.edu|stat.uci.edu", link.lower())
+        isUCIEDU = re.search(r"ics.uci.edu|cs.uci.edu|informatics.uci.edu|stat.uci.edu", parsed.netloc.lower()) #filter for UCI EDU links
 
         if isUCIEDU:
-            return not re.match(
+            return not re.match(                                        #filter for file extensions to exclude
             r".*\.(css|js|bmp|gif|jpe?g|jpg|ico"
             + r"|png|tiff?|mid|mp2|mp3|mp4"
             + r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
