@@ -1,16 +1,10 @@
 import re
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urljoin
+from bs4 import BeautifulSoup
 
 def scraper(url, resp):
     links = extract_next_links(url, resp)
-    # return [link for link in links if is_valid(link)]
-
-    # print(links)
-    for each in links:
-        if is_valid(each):
-            print(each)
-
-    return []
+    return [link for link in links if is_valid(link)]
 
 def extract_next_links(url, resp):
     # Implementation required.
@@ -22,12 +16,17 @@ def extract_next_links(url, resp):
     #         resp.raw_response.url: the url, again
     #         resp.raw_response.content: the content of the page!
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
-    
+    links = set()
+
     if (resp.status == 200): # No problem
         content = resp.raw_response.content.decode('utf-8', 'ignore')
+
+        soup = BeautifulSoup(content, "html.parser")
         
-        links = re.findall(r'<a[^>]+href=[\'"]([^\'"]+)[\'"]', content)
-        links = [urlparse(link).geturl() for link in links]
+        for a_tag in soup.find_all("a", href=True):
+            full_url = urljoin(url, a_tag['href'])
+            full_url = full_url.split('#')[0]  # Remove fragment
+            links.add(full_url)
         
     else:
         print("Error: ", resp.error)  
@@ -42,12 +41,19 @@ def is_valid(url):
         parsed = urlparse(url)
         if parsed.scheme not in set(["http", "https"]):
             return False
-        isUCIEDU = re.search(r".uci.edu", parsed.path.lower())
+        
+        link = parsed.netloc
+        if link == "":
+            link = parsed.path
+
+        if re.search(r"/events/|\?share=", link.lower()):
+            return False
+
+        isUCIEDU = re.search(r"ics.uci.edu|cs.uci.edu|informatics.uci.edu|stat.uci.edu", link.lower())
+
         if isUCIEDU:
-            print(f"Found Path: {parsed.path.lower()}")
-            
             return not re.match(
-            r".*\.(css|js|bmp|gif|jpe?g|ico"
+            r".*\.(css|js|bmp|gif|jpe?g|jpg|ico"
             + r"|png|tiff?|mid|mp2|mp3|mp4"
             + r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
             + r"|ps|eps|tex|ppt|pptx|doc|docx|xls|xlsx|names"
@@ -55,9 +61,9 @@ def is_valid(url):
             + r"|epub|dll|cnf|tgz|sha1"
             + r"|thmx|mso|arff|rtf|jar|csv"
             + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower())
-    
-        # else:
-        #     return False
+        
+        else:
+            return False
         
     except TypeError:
         print ("TypeError for ", parsed)
