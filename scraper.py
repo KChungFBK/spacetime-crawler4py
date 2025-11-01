@@ -1,7 +1,7 @@
 import re
 from urllib.parse import urlparse, urljoin
 from bs4 import BeautifulSoup
-from collections import Counter
+from collections import Counter, defaultdict
 import heapq
 
 class MostCommonWords:
@@ -41,6 +41,8 @@ class MostCommonWords:
         # Return the count of the top 'n' words
         return {word: freq for freq, word in self.min_heap}
 
+subdomains = defaultdict(set)
+
 most_common_words = MostCommonWords(top_n=50, pages_to_update=10)
 
 stop_words = {
@@ -73,6 +75,11 @@ def scraper(url, resp):
     #NUMBER OF UNIQUE PAGES: len(links)
     #LONGEST PAGE: longest_page dict
     #50 MOST COMMON WORDS: most_common_words.get_top_words() and most_common_wordss.get_word_count()
+
+    # global subdomains #keeps track of subdomains and the number of unique paths
+    # for url in links:
+    #     parsed = urlparse(url)
+    #     subdomains[parsed.netloc].add(parsed.path)
 
     return [link for link in links if is_valid(link)]
 
@@ -110,9 +117,12 @@ def extract_next_links(url, resp):
         most_common_words.update(common_words)
         #gather other links from the page
         for a_tag in soup.find_all("a", href=True):
-            full_url = urljoin(url, a_tag['href']) # Resolve relative URLs
-            full_url = full_url.split('#')[0]  # Remove fragment
-            links.add(full_url)
+            try:
+                full_url = urljoin(url, a_tag['href']) # Resolve relative URLs
+                full_url = full_url.split('#')[0]  # Remove fragment
+                links.add(full_url)
+            except ValueError:
+                print ("ValueError for ", a_tag['href'])
         
     else:
         print("Error: ", resp.error)  
