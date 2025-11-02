@@ -125,6 +125,11 @@ def extract_next_links(url, resp):
         if longest_page["word_count"] < len(words):
             longest_page["url"] = resp.url
             longest_page["word_count"] = len(words)
+
+        # Skip pages with less than 200 words for common word analysis
+        if len(words) < 200:
+            return set()
+        
         # Gather valid words for common word analysis
         # ASSUMING common_words cannot be less than 2 letters AND cannot be stop_words
         common_words = [word.lower() for word in words if len(word) >= 2 and word.lower() not in stop_words]
