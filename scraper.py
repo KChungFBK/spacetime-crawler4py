@@ -77,12 +77,24 @@ def scraper(url, resp):
     #50 MOST COMMON WORDS: most_common_words.get_top_words() and most_common_wordss.get_word_count()
 
     global subdomains #keeps track of subdomains and the number of unique paths
+    global most_common_words
+    global longest_page
 
     links = [link for link in links if is_valid(link)]
 
     for url in links:
         parsed = urlparse(url)
         subdomains[parsed.netloc].add(parsed.path)
+
+    print("Number of unique pages: " + len(links))
+    print()
+    print("Longest page URL: " + longest_page['url'])
+    print()
+    print("Longest page word count: " + longest_page['word_count'])
+    print()
+    print("Most Common Words: 0. - Word - Count")
+    for i, word in enumerate(most_common_words.get_top_words()):
+        print((i + 1) + ". - " + word + " - " + most_common_words.get_word_count()[f"{word}"])
 
     return links
 
