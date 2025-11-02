@@ -76,12 +76,15 @@ def scraper(url, resp):
     #LONGEST PAGE: longest_page dict
     #50 MOST COMMON WORDS: most_common_words.get_top_words() and most_common_wordss.get_word_count()
 
-    # global subdomains #keeps track of subdomains and the number of unique paths
-    # for url in links:
-    #     parsed = urlparse(url)
-    #     subdomains[parsed.netloc].add(parsed.path)
+    global subdomains #keeps track of subdomains and the number of unique paths
 
-    return [link for link in links if is_valid(link)]
+    links = [link for link in links if is_valid(link)]
+
+    for url in links:
+        parsed = urlparse(url)
+        subdomains[parsed.netloc].add(parsed.path)
+
+    return links
 
 def extract_next_links(url, resp):
     # url: the URL that was used to get the page
@@ -145,7 +148,7 @@ def is_valid(url):
         if re.search(r"\?share=|\?ical=", parsed.query): # query parameters to exclude
             return False
 
-        isUCIEDU = re.search(r"ics.uci.edu|cs.uci.edu|informatics.uci.edu|stat.uci.edu", parsed.netloc.lower()) #filter for UCI EDU links
+        isUCIEDU = re.search(r"ics.uci.edu|cs.uci.edu|informatics.uci.edu|stat.uci.edu", parsed.netloc.lower()) #filter for UCI EDU links 
 
         if isUCIEDU:
             return not re.match(                                        #filter for file extensions to exclude
