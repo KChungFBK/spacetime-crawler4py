@@ -93,8 +93,8 @@ def scraper(url, resp):
     print(f"Longest page word count: {longest_page['word_count']}")
     print()
     print("Most Common Words: 0. - Word - Count")
-    for i, word in enumerate(most_common_words.get_top_words()):
-        print(f"{i + 1}. - {word[1]} - {most_common_words.get_word_count()[f'{word}']}")
+    for i, (freq, word) in enumerate(most_common_words.get_top_words()):
+        print(f"{i + 1}. - {word} - {freq}")
 
     return links
 
