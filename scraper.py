@@ -86,15 +86,15 @@ def scraper(url, resp):
         parsed = urlparse(url)
         subdomains[parsed.netloc].add(parsed.path)
 
-    print("Number of unique pages: " + len(links))
+    print("Number of unique pages: " + str(len(links)))
     print()
-    print("Longest page URL: " + longest_page['url'])
+    print(f"Longest page URL: {longest_page['url']}")
     print()
-    print("Longest page word count: " + longest_page['word_count'])
+    print(f"Longest page word count: {longest_page['word_count']}")
     print()
     print("Most Common Words: 0. - Word - Count")
     for i, word in enumerate(most_common_words.get_top_words()):
-        print((i + 1) + ". - " + word + " - " + most_common_words.get_word_count()[f"{word}"])
+        print(f"{i + 1}. - {word[1]} - {most_common_words.get_word_count()[f'{word}']}")
 
     return links
 

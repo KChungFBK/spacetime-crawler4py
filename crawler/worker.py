@@ -69,4 +69,4 @@ class Worker(Thread):
             # Optional: short delay (respects global config delay too)
             time.sleep(self.config.time_delay)
         for subdomain in scraper.subdomains:
-            print(f"Subdomain: {subdomain} # of pages: {len(scraper.subdomains[subdomain])} ")
+            print(f"Subdomain: {subdomain}, # of Paths: {len(scraper.subdomains[subdomain])}")
