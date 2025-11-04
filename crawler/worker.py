@@ -48,7 +48,7 @@ class Worker(Thread):
                 self.logger.info("Frontier is empty. Stopping Crawler.")
                 break
 
-            # 🕒 Respect per-domain politeness
+            #Respect per-domain politeness
             self._respect_politeness(tbd_url)
 
             # Download the page
@@ -68,3 +68,5 @@ class Worker(Thread):
 
             # Optional: short delay (respects global config delay too)
             time.sleep(self.config.time_delay)
+        for subdomain in scraper.subdomains:
+            print(f"Subdomain: {subdomain} # of pages: {len(scraper.subdomains[subdomain])} ")
