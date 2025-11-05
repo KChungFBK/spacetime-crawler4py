@@ -13,13 +13,14 @@ class MostCommonWords:
         self.counter = Counter()  
         self.min_heap = []  
         self.pages_processed = 0 
-        self.pages_to_update = pages_to_update 
+        self.pages_to_update = pages_to_update
+        self.lock = threading.Lock()
 
     def update(self, words):
         with self.lock:
             self.counter.update(words)
             self.pages_processed += 1
-            if self.pages_processed % self.pages_to_update == 0:
+            if self.pages_processed % self.pages_to_update == 0: 
                 self.recalculate_top_n()
 
     #THIS FUNCTION WAS ADDED so the memory load is never too high
@@ -68,13 +69,29 @@ def scraper(url, resp):
     #NUMBER OF UNIQUE PAGES: len(links)
     #LONGEST PAGE: longest_page dict
     #50 MOST COMMON WORDS: most_common_words.get_top_words() and most_common_wordss.get_word_count()
+
+    global subdomains 
+    global most_common_words
+    global longest_page
+
+    links = [link for link in links if is_valid(link)]
+
     with data_lock:
         for url in links:
             parsed = urlparse(url)
-            if parsed.netloc.endswith(".uci.edu"):
-                subdomains[parsed.netloc].add(parsed.path)
+            subdomains[parsed.netloc].add(parsed.path)
 
-    return [link for link in links if is_valid(link)]
+    print("Number of unique pages: " + str(len(links)))
+    print()
+    print(f"Longest page URL: {longest_page['url']}")
+    print()
+    print(f"Longest page word count: {longest_page['word_count']}")
+    print()
+    print("Most Common Words: 0. - Word - Count")
+    for i, (freq, word) in enumerate(most_common_words.get_top_words()):
+        print(f"{i + 1}. - {word} - {freq}")
+
+    return links
 
 def extract_next_links(url, resp):
     # url: the URL that was used to get the page
@@ -108,7 +125,7 @@ def extract_next_links(url, resp):
         # ASSUMING common_words cannot be less than 2 letters AND cannot be stop_words
 
         if len(words) < 200:
-        return set()
+            return set()
 
         common_words = [word.lower() for word in words if len(word) >= 2 and word.lower() not in stop_words]
         # Update the MostCommonWords instance with the common words for this page
