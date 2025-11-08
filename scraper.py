@@ -6,6 +6,21 @@ import heapq
 import threading
 
 data_lock = threading.Lock()
+PAGINATION_PATH_RE  = re.compile(r"/page/(\d+)(?:/)?$", re.IGNORECASE)
+PAGINATION_QUERY_RE = re.compile(r"(?:^|[?&])paged=(\d+)(?:&|$)", re.IGNORECASE)
+PAGINATION_LIMIT    = 3
+
+ALLOWED_DOMAINS = {
+    "ics.uci.edu",
+    "cs.uci.edu",
+    "informatics.uci.edu",
+    "stat.uci.edu",
+}
+
+def allowed_domain(host: str) -> bool:
+    h = host.lower()
+    return any(h == d or h.endswith("." + d) for d in ALLOWED_DOMAINS)
+
 
 class MostCommonWords:
     def __init__(self, top_n=50, pages_to_update=50):
@@ -81,15 +96,15 @@ def scraper(url, resp):
             parsed = urlparse(url)
             subdomains[parsed.netloc].add(parsed.path)
 
-    print("Number of unique pages: " + str(len(links)))
-    print()
-    print(f"Longest page URL: {longest_page['url']}")
-    print()
-    print(f"Longest page word count: {longest_page['word_count']}")
-    print()
-    print("Most Common Words: 0. - Word - Count")
-    for i, (freq, word) in enumerate(most_common_words.get_top_words()):
-        print(f"{i + 1}. - {word} - {freq}")
+    # print("Number of unique pages: " + str(len(links)))
+    # print()
+    # print(f"Longest page URL: {longest_page['url']}")
+    # print()
+    # print(f"Longest page word count: {longest_page['word_count']}")
+    # print()
+    # print("Most Common Words: 0. - Word - Count")
+    # for i, (freq, word) in enumerate(most_common_words.get_top_words()):
+    #     print(f"{i + 1}. - {word} - {freq}")
 
     return links
 
@@ -154,6 +169,15 @@ def is_valid(url):
         parsed = urlparse(url)
         if parsed.scheme not in {"http", "https"}:
             return False
+        
+        m = PAGINATION_PATH_RE.search(parsed.path or "")
+        if m and int(m.group(1)) > PAGINATION_LIMIT:
+            return False
+
+        # Block ?paged=N if N > limit
+        mq = PAGINATION_QUERY_RE.search(parsed.query or "")
+        if mq and int(mq.group(1)) > PAGINATION_LIMIT:
+            return False
 
         trap_patterns = [
             "doku.php", "grape.ics.uci.edu/wiki", "gitlab.ics.uci.edu",
@@ -175,10 +199,10 @@ def is_valid(url):
         if re.search(r"\?share=|\?ical=", parsed.query):
             return False
 
-        isUCIEDU = re.search(r"ics.uci.edu|cs.uci.edu|informatics.uci.edu|stat.uci.edu", parsed.netloc.lower()) 
+        if not allowed_domain(parsed.netloc):
+            return False
 
-        if isUCIEDU:
-            return not re.match(                                       
+        return not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|jpg|ico"
             + r"|png|tiff?|mid|mp2|mp3|mp4"
             + r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
@@ -186,10 +210,9 @@ def is_valid(url):
             + r"|data|dat|exe|bz2|tar|msi|bin|7z|psd|dmg|iso"
             + r"|epub|dll|cnf|tgz|sha1"
             + r"|thmx|mso|arff|rtf|jar|csv"
-            + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower())
-        
-        else:
-            return False
+            + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$",
+            parsed.path.lower()
+        )
 
     except ValueError:
         print ("ValueError for ", parsed)
